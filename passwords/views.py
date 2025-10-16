@@ -5,6 +5,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.conf import settings
 from .models import PasswordEntry
 
 
@@ -70,9 +71,10 @@ def fetch_data(request):
     except ValueError:
         return HttpResponse('Format de requette erroné', status=400)
 
-    # Check request limit (5 requests max like original)
+    # Check request limit (configurable via settings)
+    request_limit = getattr(settings, 'PASSWORD_MANAGER_REQUEST_LIMIT', 5)
     nb_req = request.session.get('nb_req', 0)
-    if nb_req >= 5:
+    if nb_req >= request_limit:
         return HttpResponse('Vous avez dépassé le nombre de requettes autorisées', status=429)
 
     # Get user's services

@@ -1,0 +1,12 @@
+/* Login page specific styles */
+div.log {
+    width: 300px;
+    height: 100px;
+    text-align: center;
+}
+
+.error {
+    color: #ea4848;
+    margin-bottom: 10px;
+    font-size: small;
+}

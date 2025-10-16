@@ -1,14 +1,23 @@
 # Django Password Manager
 
-This is a Django re-implementation of the original PHP password manager, maintaining the same functionality while adding SQLite encryption.
+A secure, modern password manager built with Django, featuring encrypted storage and a user-friendly admin interface. This is a complete rewrite of the original PHP application with significant security improvements.
 
 ## Features
 
-- Time-based authentication (10-minute validity like original)
-- Encrypted password storage using Fernet encryption
-- Original search functionality with autocomplete
-- Request limiting (5 requests per session)
-- Same UI/UX as original
+### Core Functionality
+- **Multi-user support** with secure authentication
+- **Encrypted password storage** using Fernet encryption (AES 128)
+- **Django Admin interface** for easy password management
+- **Category-based organization** of password entries
+- **Search and filtering** capabilities
+- **User data isolation** - users only see their own passwords
+
+### Security Features
+- **User-specific encryption** with unique salts per user
+- **PBKDF2 key derivation** (100,000 iterations, OWASP recommended)
+- **Session-based authentication** via Django framework
+- **CSRF protection** and input validation
+- **Configurable request limiting** (default: 5 requests per session)
 
 ## Setup Instructions
 
@@ -42,57 +51,83 @@ This is a Django re-implementation of the original PHP password manager, maintai
    ```
 
 6. **Access the application:**
-   - Open http://127.0.0.1:8000/ in your browser
+   - **Admin Interface**: http://127.0.0.1:8000/admin/ (recommended)
+   - **Original Interface**: http://127.0.0.1:8000/ (legacy compatibility)
    - Login with the username and password you created
 
-## How it works
+## Usage
 
-### Authentication
-- Uses Django's built-in user authentication system
-- Session-based authentication with login/logout
-- Each user has their own isolated password data
+### Admin Interface (Recommended)
+The Django admin provides a modern, secure interface for password management:
 
-### Data Storage
-- SQLite database with Fernet encryption for password data
-- Categories and entries are stored separately like the original structure
-- **User-specific encryption keys** derived from each user's password + unique salt
-- User-specific data isolation - each user only sees their own passwords
-- PBKDF2 key derivation with 100,000 iterations (OWASP recommended)
+1. **Navigate to**: http://127.0.0.1:8000/admin/
+2. **Login** with your user credentials
+3. **Manage Password Categories**: Create/organize password groups
+4. **Manage Password Entries**: Add/edit/delete individual passwords
+   - Enter service name, URL, username, and password
+   - Passwords are automatically encrypted using your session credentials
+   - View existing passwords with masked previews
+5. **Search and Filter**: Use built-in Django admin search/filter capabilities
 
-### Search Functionality
-- Same autocomplete search as original
-- Special character handling preserved
-- 6 suggestion limit maintained
+### Legacy Interface
+The original PHP-style interface is available at http://127.0.0.1:8000/ for compatibility.
+
+## How it Works
+
+### Authentication & Security
+- **Django Authentication**: Secure user management with password hashing
+- **Session Management**: User credentials stored securely in session for encryption
+- **Per-User Encryption**: Each user's data encrypted with their own derived key
+- **Data Isolation**: Users can only access their own password entries
+
+### Database Structure
+- **PasswordCategory**: Organizes passwords into groups/categories
+- **PasswordEntry**: Individual password records with encryption
+- **UserEncryptionProfile**: Stores user-specific encryption salts
+- **SQLite Backend**: Lightweight, file-based database with encryption
+
+## Configuration
+
+### Settings
+You can customize the application behavior in `password_manager/settings.py`:
+
+```python
+# Password Manager settings
+PASSWORD_MANAGER_REQUEST_LIMIT = 5  # Max requests per session (0 = unlimited)
+```
+
+### Environment Variables
+- `DJANGO_SECRET_KEY`: Django secret key (auto-generated if not set)
 
 ## File Structure
 
 ```
 django/
-├── password_manager/         # Django project settings
-├── passwords/                # Main app
+├── password_manager/         # Django project configuration
+│   ├── settings.py           # Application settings & configuration
+│   ├── urls.py               # Main URL routing
+│   └── wsgi.py               # WSGI application entry point
+├── passwords/                # Main password management app
 │   ├── models.py             # Database models with encryption
-│   ├── views.py              # Views replicating PHP logic
-│   ├── urls.py               # URL routing
-│   ├── templates/            # HTML templates
-│   └── management/           # Custom commands
+│   ├── admin.py              # Django admin interface configuration
+│   ├── views.py              # Views for legacy interface
+│   ├── urls.py               # App-specific URL routing
+│   ├── templates/            # HTML templates for legacy UI
+│   └── management/           # Custom Django commands
 │       └── commands/
-│           └── import_passwords.py  # Data import script
-└── db.sqlite3                # SQLite database (created after migrations)
+│           └── import_passwords.py  # Data import from old format
+└── db.sqlite3                # SQLite database (auto-created)
 ```
 
-## Security Features
+## Troubleshooting
 
-- **User-specific encryption**: Each user's passwords are encrypted with a key derived from their own password
-- **Unique salts**: Each user gets a unique 32-byte salt for key derivation
-- **PBKDF2 key derivation**: 100,000 iterations using SHA-256
-- **Fernet encryption**: AES 128 in CBC mode with authentication
-- **Session security**: User passwords are temporarily stored in session for decryption
-- **Data isolation**: Users can only access their own encrypted data
+### Common Issues
+1. **Migration errors**: Run `python manage.py makemigrations` then `python manage.py migrate`
+2. **Admin access**: Ensure you created a superuser with `python manage.py createsuperuser`
+3. **Session expired**: Re-login through `/login/` if encryption fails in admin
+4. **Import errors**: Ensure the old .ini file path is correct and accessible
 
-## Notes
-
-- The database file `db.sqlite3` will be created automatically
-- Password data is encrypted per-user - if a user forgets their password, their data cannot be recovered
-- The original INI file structure is preserved in the database
-- JavaScript functionality is identical to the original
-- Backward compatibility included for any data encrypted with the old global key system
+### Development
+- **Debug mode**: Set `DEBUG = True` in settings.py for development
+- **Database reset**: Delete `db.sqlite3` and re-run migrations to start fresh
+- **Logs**: Check console output for Django error messages
