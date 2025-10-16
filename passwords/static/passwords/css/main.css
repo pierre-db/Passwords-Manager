@@ -10,31 +10,31 @@ a {
     text-decoration: none;
     color: #020202;
     transition: color .3s;
-    -moz-transition: color .3s; /* Firefox 4 */
-    -webkit-transition: color .3s; /* Safari and Chrome */
-    -o-transition: color .3s; /* Opera */
 }
 
 a:hover, a.selected {
     color: #ea4848;
 }
 
-table {
-    border-spacing: 0;
-    border-collapse: collapse;
-    display: inline-block;
+.icon {
+    width: 1.5rem;
+    aspect-ratio: 1/1;
+    transition: transform .3s;
+}
+.icon:hover {
+    transform: translateY(-2px);
 }
 
 h1 {
     font-size: large;
-    margin-bottom: 20px;
+    margin: 0 0 20px 0;
 }
 
 input {
     width: 100%;
     max-width: 300px;
+    height: 2rem;
     box-sizing: border-box;
-    height: 24px;
     border: none;
     border-bottom: 1px solid #E8E8E8;
     border-radius: 2px;
@@ -45,12 +45,6 @@ input:focus {
     border-bottom: 2px solid #909090;
 }
 
-input.btn {
-    border: none;
-    padding-bottom: 1px;
-    padding-top: 1px;
-}
-
 span#suggestion {
     display: block;
     height: 20px;
@@ -58,6 +52,7 @@ span#suggestion {
     background-color: #F5F5F5;
     padding-top: 8px;
     padding-bottom: 24px;
+    padding-left: 2px;
     border: none;
 }
 
@@ -71,7 +66,7 @@ span#suggestion:hover {
     margin-top: 0px;
     max-width: 300px;
     max-height: 98px;
-    overflow-y: scroll;
+    overflow-y: auto;
     overflow-x: hidden;
     display: none;
 }
@@ -94,10 +89,6 @@ span#suggestion:hover {
     margin-top: 10px;
     text-align: center;
     background-color: #F2F2F2;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    padding-left: 20px;
-    padding-right: 20px;
     box-shadow: 2px 2px 6px #CECECE;
     -moz-border-radius: 10x;
     -webkit-border-radius: 10px;
@@ -109,7 +100,18 @@ span#suggestion:hover {
     height: 150px;
 }
 
-.select > p {
+.select .icons-group {
     text-align: right;
-    margin-top: -5px;
+    margin: 2px;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+    .select {
+        width: 80%;
+        padding: 0 10px;
+    }
+    .icon {
+        width: 1.6rem;
+    }
 }

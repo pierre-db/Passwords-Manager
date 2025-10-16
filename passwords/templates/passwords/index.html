@@ -18,7 +18,10 @@
     <body>
         <div id="wrapper">
             <div class="select">
-                <p><a href="{% url 'logout' %}">Déconnecter</a></p>
+                <p class="icons-group">
+                    <a href="{% url 'admin:index' %}"><img class="icon" src="{% static 'passwords/img/settings.svg' %}"></a>
+                    <a href="{% url 'logout' %}"><img class="icon" src="{% static 'passwords/img/logout.svg' %}"></a>
+                </p>
                 <h1>Memento</h1>
 
                 <form name="search" onsubmit="return false;">
