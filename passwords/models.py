@@ -8,7 +8,7 @@ import os
 
 
 class PasswordCategory(models.Model):
-    """Represents a password category (like 'Afam', 'CSE Plaisir', etc.)"""
+    """Represents a password category"""
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='categories')
     name = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
