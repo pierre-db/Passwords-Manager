@@ -26,14 +26,21 @@ function normalizeString(str) {
 }
 
 // Select a service from suggestions
-function selectService(index) {
+function selectService(serviceName) {
     const input = document.querySelector('input[name="input"]');
-    input.value = list[index];
-    handleSearch(index);
+    const suggestionsEl = document.getElementById("suggestions");
+
+    input.value = serviceName;
+
+    // Hide suggestions
+    suggestionsEl.innerHTML = '';
+    suggestionsEl.style.display = 'none';
+
+    sendRequest(serviceName);
 }
 
 // Main search function - simplified and modernized
-function handleSearch(serviceIndex = -1) {
+function handleSearch() {
     const input = document.querySelector('input[name="input"]').value.trim();
     const suggestionsEl = document.getElementById("suggestions");
     const outputEl = document.getElementById("output");
@@ -45,37 +52,30 @@ function handleSearch(serviceIndex = -1) {
 
     if (!input) return;
 
-    // If specific service index provided, fetch that service
-    if (serviceIndex >= 0) {
-        sendRequest(serviceIndex);
-        return;
-    }
-
     // Find exact match first
-    const exactMatch = list.findIndex(service =>
+    const exactMatch = list.find(service =>
         normalizeString(service) === normalizeString(input)
     );
 
-    if (exactMatch >= 0) {
+    if (exactMatch) {
         sendRequest(exactMatch);
         return;
     }
 
     // Show suggestions for partial matches
     const suggestions = list
-        .map((service, index) => ({ service, index }))
-        .filter(({ service }) =>
+        .filter(service =>
             normalizeString(service).startsWith(normalizeString(input))
         )
-        .sort((a, b) => a.service.localeCompare(b.service))
+        .sort((a, b) => a.localeCompare(b))
         .slice(0, 6); // Limit to 6 suggestions
 
     if (suggestions.length > 0) {
-        suggestions.forEach(({ service, index }) => {
+        suggestions.forEach(service => {
             const suggestionEl = document.createElement("span");
             suggestionEl.id = "suggestion";
             suggestionEl.textContent = service;
-            suggestionEl.addEventListener('click', () => selectService(index));
+            suggestionEl.addEventListener('click', () => selectService(service));
             suggestionsEl.appendChild(suggestionEl);
         });
         suggestionsEl.style.display = 'inline-block';
@@ -86,7 +86,7 @@ async function sendRequest(data) {
     const outputElement = document.getElementById("output");
 
     // Show loading message
-    fillElement(outputElement, "Recupération des données...");
+    fillElement(outputElement, "Retrieving data...");
 
     try {
         const response = await fetch(fetchDataUrl, {
@@ -98,15 +98,52 @@ async function sendRequest(data) {
             body: "item=" + data
         });
 
+        const jsonData = await response.json();
+
         if (response.ok) {
-            const output = await response.text();
-            fillElement(outputElement, output.trim());
+            // Generate HTML from JSON data
+            const html = generateEntryHTML(jsonData);
+            fillElement(outputElement, html);
         } else {
-            fillElement(outputElement, "Erreur lors de la récupération des données");
+            // Handle error response
+            fillElement(outputElement, `<div class="error">Error: ${jsonData.error}</div>`);
         }
     } catch (error) {
-        fillElement(outputElement, "Erreur lors de la récupération des données");
+        fillElement(outputElement, '<div class="error">Error retrieving data</div>');
     }
+}
+
+// Generate HTML elements from JSON password data
+function generateEntryHTML(data) {
+    let html = `<div class="entry-field">
+        <div class="field-label">Service:</div>
+        <div class="field-value"><strong>${escapeHtml(data.service_name)}</strong></div>`;
+
+    if (data.service_url) {
+        html += `<div class="field-label">URL:</div>
+        <div class="field-value"><a href="${escapeHtml(data.service_url)}" target="_blank">${escapeHtml(data.service_url)}</a></div>`;
+    }
+
+    html += `<div class="field-label">Username:</div>
+        <div class="field-value">${escapeHtml(data.username)}</div>
+        <div class="field-label">Password:</div>
+        <div class="field-value">${escapeHtml(data.password)}</div>`;
+
+    if (data.comments) {
+        html += `<div class="field-label">Notes:</div>
+        <div class="field-value">${escapeHtml(data.comments)}</div>`;
+    }
+
+    html += `</div>`;
+
+    return html;
+}
+
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Get CSRF token for Django

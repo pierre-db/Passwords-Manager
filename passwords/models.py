@@ -69,6 +69,7 @@ class PasswordEntry(models.Model):
 
     class Meta:
         ordering = ['category__name', 'service_name', 'username']
+        unique_together = ['user', 'service_name']  # Each user can have unique service names
 
     def encrypt_password(self, password, user_password):
         """Encrypt a password using user-specific key"""

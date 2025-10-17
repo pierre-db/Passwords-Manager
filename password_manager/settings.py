@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", 'j*u=&95&jbyqb@949t6n5q_&vz@#yvdsztnfj$)c*053*odfqm')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = (os.environ.get("DJANGO_DEBUG", 'False').lower() == 'true')
 
 ALLOWED_HOSTS = ["127.0.0.1"]
 
@@ -135,6 +135,9 @@ LOGOUT_REDIRECT_URL = '/login/'
 SESSION_COOKIE_AGE = 600  # 10 minutes in seconds
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 SESSION_SAVE_EVERY_REQUEST = True  # Reset timeout on each request
+SECURE_SSL_REDIRECT=False
+# CSRF_COOKIE_SECURE=True
+
 
 # Password Manager settings
 PASSWORD_MANAGER_REQUEST_LIMIT = 5  # Maximum number of password fetch requests per session

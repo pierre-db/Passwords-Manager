@@ -1,10 +1,9 @@
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
 from django.conf import settings
 from .models import PasswordEntry
 
@@ -42,7 +41,7 @@ def index_view(request):
     """Main password manager page"""
     # Get all password entries for the current user to build service list
     entries = PasswordEntry.objects.filter(user=request.user).order_by('service_name')
-    service_list = [entry.service_name.lower() for entry in entries]
+    service_list = [entry.service_name for entry in entries]
 
     context = {
         'categories': service_list,  # Keep same template variable name for compatibility
@@ -59,57 +58,50 @@ def index_view(request):
 @require_POST
 @login_required
 def fetch_data(request):
-    """Fetch password data for a category"""
+    """Fetch password data for a specific entry"""
     # Validate request parameters
-    item = request.POST.get('item')
+    service_name = request.POST.get('item')
 
-    if not item:
-        return HttpResponse('Format de requette erroné', status=400)
-
-    try:
-        item = int(item)
-    except ValueError:
-        return HttpResponse('Format de requette erroné', status=400)
+    if not service_name:
+        return JsonResponse({'error': 'Invalid request format'}, status=400)
 
     # Check request limit (configurable via settings)
     request_limit = getattr(settings, 'PASSWORD_MANAGER_REQUEST_LIMIT', 5)
     nb_req = request.session.get('nb_req', 0)
     if nb_req >= request_limit:
-        return HttpResponse('Vous avez dépassé le nombre de requettes autorisées', status=429)
-
-    # Get user's services
-    entries = list(PasswordEntry.objects.filter(user=request.user).order_by('service_name'))
-
-    # Validate item range
-    if item >= len(entries):
-        return HttpResponse('Format de requette erroné', status=400)
+        return JsonResponse({'error': 'You have exceeded the allowed number of requests'}, status=429)
 
     # Increment request counter
     request.session['nb_req'] = nb_req + 1
 
     try:
-        # Get the specific entry by index
-        entry = entries[item]
+        # Get the specific entry by service name, ensuring it belongs to the current user
+        entry = PasswordEntry.objects.get(service_name=service_name, user=request.user)
 
         # Build response data for the specific entry
         user_password = request.session.get('user_password')
 
         if not user_password:
-            return HttpResponse('Session expirée - reconnectez-vous', status=401)
+            return JsonResponse({'error': 'Session expired - please log in again'}, status=401)
 
+        # Generate response
         decrypted_password = entry.decrypt_password(user_password)
-        data = f'<strong>{entry.service_name}</strong><br>'
+        data = {
+            'service_name': entry.service_name,
+            'username': entry.username,
+            'password': decrypted_password,
+        }
         if entry.service_url:
-            data += f'URL: <a href="{entry.service_url}" target="_blank">{entry.service_url}</a><br>'
-        data += f'Username: {entry.username}<br>'
-        data += f'Password: {decrypted_password}<br>'
+            data['service_url'] = entry.service_url
         if entry.comments:
-            data += f'Notes: {entry.comments}<br>'
+            data['comments'] = entry.comments
 
-        return HttpResponse(data)
+        return JsonResponse(data)
 
+    except PasswordEntry.DoesNotExist:
+        return JsonResponse({'error': 'Entry not found'}, status=404)
     except Exception:
-        return HttpResponse('Le fichier est introuvable ou incompatible', status=500)
+        return JsonResponse({'error': 'Internal server error'}, status=500)
 
 
 def logout_view(request):
